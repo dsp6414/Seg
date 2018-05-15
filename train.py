@@ -9,10 +9,9 @@ from model import Deconv
 import vgg
 import resnet
 import densenet
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 from datetime import datetime
 import os
-import glob
 import pdb
 import argparse
 from os.path import expanduser
@@ -58,20 +57,20 @@ def make_image_grid(img, mean, std):
 
 def main():
     # tensorboard writer
-    os.system('rm -rf ./runs2/*')
-    writer = SummaryWriter('./runs2/'+datetime.now().strftime('%B%d  %H:%M:%S'))
-    if not os.path.exists('./runs2'):
-        os.mkdir('./runs2')
-
+    """
+    os.system('rm -rf ./runs/*')
+    writer = SummaryWriter('./runs/'+datetime.now().strftime('%B%d  %H:%M:%S'))
+    if not os.path.exists('./runs'):
+        os.mkdir('./runs')
+    std = [.229, .224, .225]
+    mean = [.485, .456, .406]
+    """
     train_dir = opt.train_dir
     val_dir = opt.val_dir
     check_dir = opt.check_dir
 
     bsize = opt.b
     iter_num = opt.e  # training iterations
-
-    std = [.229, .224, .225]
-    mean = [.485, .456, .406]
 
     if not os.path.exists(check_dir):
         os.mkdir(check_dir)
@@ -95,11 +94,31 @@ def main():
     val_loader = torch.utils.data.DataLoader(
         MyData(val_dir,  transform=True, crop=False, hflip=False, vflip=False),
         batch_size=bsize/2, shuffle=True, num_workers=4, pin_memory=True)
-
-    optimizer_deconv = torch.optim.Adam(deconv.parameters(), lr=1e-3)
-    optimizer_feature = torch.optim.Adam(feature.parameters(), lr=1e-4)
+    if 'resnet' in opt.q:
+        lr = 5e-3
+        lr_decay = 0.9
+        optimizer = torch.optim.SGD([
+            {'params': [param for name, param in deconv.named_parameters() if name[-4:] == 'bias'],
+             'lr': 2 * lr},
+            {'params': [param for name, param in deconv.named_parameters() if name[-4:] != 'bias'],
+             'lr': lr, 'weight_decay': 1e-4},
+            {'params': [param for name, param in feature.named_parameters() if name[-4:] == 'bias'],
+             'lr': 2 * lr},
+            {'params': [param for name, param in feature.named_parameters() if name[-4:] != 'bias'],
+             'lr': lr, 'weight_decay': 1e-4}
+        ], momentum=0.9, nesterov=True)
+    else:
+        optimizer = torch.optim.Adam([
+            {'params': feature.parameters(), 'lr': 1e-4},
+            {'params': deconv.parameters(), 'lr': 1e-3},
+            ])
     min_loss = 10000.0
     for it in range(iter_num):
+        if 'resnet' in opt.q:
+            optimizer.param_groups[0]['lr'] = 2 * lr * (1 - float(it) / iter_num) ** lr_decay  # bias
+            optimizer.param_groups[1]['lr'] = lr * (1 - float(it) / iter_num) ** lr_decay  # weight
+            optimizer.param_groups[2]['lr'] = 2 * lr * (1 - float(it) / iter_num) ** lr_decay  # bias
+            optimizer.param_groups[3]['lr'] = lr * (1 - float(it) / iter_num) ** lr_decay  # weight
         for ib, (data, lbl) in enumerate(train_loader):
             inputs = Variable(data).cuda()
             lbl = Variable(lbl.float().unsqueeze(1)).cuda()
@@ -112,8 +131,9 @@ def main():
 
             loss.backward()
 
-            optimizer_feature.step()
-            optimizer_deconv.step()
+            optimizer.step()
+            # visualize
+            """
             if ib % 100 ==0:
                 # visulize
                 image = make_image_grid(inputs.data[:4, :3], mean, std)
@@ -126,6 +146,7 @@ def main():
                 mask1 = mask1.repeat(1, 3, 1, 1)
                 writer.add_image('Label', torchvision.utils.make_grid(mask1), ib)
                 writer.add_scalar('M_global', loss.data[0], ib)
+            """
             print('loss: %.4f (epoch: %d, step: %d)' % (loss.data[0], it, ib))
             del inputs, msk, lbl, loss, feats
             gc.collect()

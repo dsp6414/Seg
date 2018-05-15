@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    algs = ['duts_res50']
-    datasets = ['ECSSD']
+    base_dir = '/home/zeng/data/datasets/saliency_Dataset'
+    algs = ['duts_res50', 'duts_res101']
+    datasets = ['ECSSD', 'SOD']
     for dataset in datasets:
         print(dataset)
-        dir = '/home/zeng/data/datasets/saliency_Dataset/%s'%dataset
+        dir = '%s/%s'%(base_dir, dataset)
         output_dir = './%s'%dataset
         gt_dir = '%s/masks'%dir
         input_dirs = ['%s/%s'%(dir, alg) for alg in algs]

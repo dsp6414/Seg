@@ -47,7 +47,7 @@ def main():
     feature.cuda()
     feature.eval()
     sb = torch.load('%s/feature.pth'%opt.para_dir)
-    sb = OrderedDict([(k[7:], v) for (k, v) in sb.items()])
+    # sb = OrderedDict([(k[7:], v) for (k, v) in sb.items()])
     # del sb['classifier.weight']
     # del sb['classifier.bias']
     feature.load_state_dict(sb)
@@ -56,7 +56,7 @@ def main():
     deconv.cuda()
     deconv.eval()
     sb = torch.load('%s/deconv.pth' % opt.para_dir)
-    sb = OrderedDict([(k[7:], v) for (k, v) in sb.items()])
+    # sb = OrderedDict([(k[7:], v) for (k, v) in sb.items()])
     deconv.load_state_dict(sb)
     loader = torch.utils.data.DataLoader(
         MyTestData(opt.input_dir),
