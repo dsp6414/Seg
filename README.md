@@ -16,10 +16,10 @@
 
 pytorch: '0.5.0a0+9db779f'
 
-## 更新
+## Usage
 新的又做不动，也懒得复习，幻灯片又懒得做，闲着没事更新一下这个仓库。
 
-训练：
+### 训练：
 ```shell
 python train.py 
 --train_dir 'path/to/training/data' 
@@ -48,7 +48,7 @@ path/to/training/data里有两个文件夹名字叫images和masks，分别是验
 
 不知为何，用adam训练resnet的效果不好。所以resnet用SGD训练，其余都用Adam。
 
-测试：
+### 测试：
 ```shell
 python test.py
 --input_dir 'path/to/test/data' 
@@ -76,4 +76,16 @@ datasets = ['ECSSD', 'SOD']
 ，里面分别是图片(jpg)、真值(png)、两种方法产生的结果图(png)
 
 然后运行它
+
+## 备忘
+```
+try:
+    for ib, (data, lbl) in enumerate(train_loader):
+        # 一个很久的epoch
+except KeyboardInterrupt:
+    filename = ('%s/model_int.pth' % (check_dir))
+    torch.save(model.state_dict(), filename)
+    print('save: (epoch: %d, step: %d)' % (it, ib))
+    continue
+```
 
