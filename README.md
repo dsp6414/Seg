@@ -76,16 +76,3 @@ datasets = ['ECSSD', 'SOD']
 ，里面分别是图片(jpg)、真值(png)、两种方法产生的结果图(png)
 
 然后运行它
-
-## 备忘
-```
-try:
-    for ib, (data, lbl) in enumerate(train_loader):
-        # 一个很久的epoch
-except KeyboardInterrupt:
-    filename = ('%s/model_int.pth' % (check_dir))
-    torch.save(model.state_dict(), filename)
-    print('save: (epoch: %d, step: %d)' % (it, ib))
-    continue
-```
-
